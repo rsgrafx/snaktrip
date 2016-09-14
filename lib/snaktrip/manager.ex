@@ -7,10 +7,10 @@ defmodule Snaktrip.Manager do
       * pulling last known state from the Repo.
   """
 
-  def start do
+  def start_link do
     # Will eventually modify to pull in last known state
     # From ETS repo.
-    GenServer.start_link(__MODULE__, %{})
+    GenServer.start_link(__MODULE__, %{}, name: :snak_manager)
   end
 
 
