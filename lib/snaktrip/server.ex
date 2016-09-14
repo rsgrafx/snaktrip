@@ -44,7 +44,7 @@ defmodule Snaktrip.Server do
   end
 
   # Callbacks
-  def handle_call(:current_state, from, state) do
+  def handle_call(:current_state, _, state) do
     {:reply, state, state}
   end
 
