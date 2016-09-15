@@ -9,4 +9,7 @@ defmodule Snaktrip do
     }
   """
   defstruct id: nil, owner_id: nil, locations: %{}
+
+  use Snaktrip.RethinkDB.Repo
+
 end

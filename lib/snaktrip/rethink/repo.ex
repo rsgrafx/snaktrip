@@ -49,6 +49,10 @@ defmodule Snaktrip.RethinkDB.Repo do
       @doc """
         Insert new record in given * Objects.
       """
+      def save(%__MODULE__{}=record) do
+        Map.from_struct(record) |> save
+      end
+
       @spec save(Map.t) :: RethinkDB.Record.t
       def save(record)
       when is_map(record) do
