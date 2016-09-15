@@ -1,18 +1,38 @@
 defmodule Snaktrip.Server do
   use GenServer
 
-  def start_link(uuid_key) do
-    GenServer.start(__MODULE__, uuid_key)
+  def start_link(snak_id) when is_binary(snak_id) do
+    GenServer.start(__MODULE__, snak_id)
   end
 
-  def init(key) do
-    snaktrip = fetch_or_create(key) || struct(Snaktrip, id: key)
+  def start_link(data) when is_map(data) do
+    GenServer.start(__MODULE__, data)
+  end
+
+  def start_link(owner_id: user_id) do
+    GenServer.start(__MODULE__, owner_id: user_id)
+  end
+
+  # The situation is that in order to maintain integrity -
+  # I have to place the user_id in there.
+
+  # Pattern match typically for scoping
+  # Passing in API KEY \ owner_id
+  def init(%{owner_id: _, id: _}=opts) when is_map(opts) do
+    send(self, :fetch_record)
+    {:ok, opts}
+  end
+
+  # Typically when owner is creating new snaktrip
+  def init(owner_id: user_id) when is_binary(user_id) do
     # Find or Create * Trip with Key
-    {:ok, snaktrip}
+    {:ok, struct(Snaktrip, id: SecureRandom.uuid, owner_id: user_id)}
   end
 
-  defp fetch_or_create(key) do
-    # - fetch the state from a Repo.
+  # Fetch the PID - you have the key.
+  def init(snak_id) when is_binary(snak_id) do
+    send(self, :fetch_record)
+    {:ok, snak_id}
   end
 
   @doc """
@@ -44,6 +64,50 @@ defmodule Snaktrip.Server do
   end
 
   # Callbacks
+  # Initialize State
+  def handle_info(:fetch_record, snak_id) when is_binary(snak_id) do
+    snaktrip =
+      Snaktrip.fetch(snak_id)
+      |> IO.inspect
+      |> from_rethink(snak_id)
+      |> case do
+        %RethinkDB.Record{data: nil, profile: nil} -> struct(Snaktrip, id: snak_id)
+        snaktrip -> snaktrip
+      end
+    {:noreply, snaktrip}
+  end
+
+  def handle_info(:fetch_record, opts) when is_map(opts) do
+    snaktrip = fetch_by(opts) || struct(Snaktrip, id: opts[:uuid_key], user_id: opts[:user_id])
+    {:noreply, snaktrip}
+  end
+
+  defp fetch_by(%{owner_id: nil, id: snak_id}),
+    do: Snaktrip.fetch(snak_id) |> from_rethink(snak_id)
+
+  defp fetch_by(%{owner_id: user_id, id: snak_id}),
+    do: Snaktrip.fetch_by(%{owner_id: user_id, id: snak_id}) |> from_rethink(snak_id)
+
+  defp from_rethink(rethink_obj, snak_id) do
+    case rethink_obj do
+      %RethinkDB.Record{}     -> record(rethink_obj, snak_id)
+      %RethinkDB.Collection{} -> collection(rethink_obj)
+    end
+  end
+
+  defp collection(%RethinkDB.Collection{data: [%{"id" => id, "locations" => locations, "owner_id" => owner}]}) do
+    struct(Snaktrip, id: id, owner_id: owner, locations: locations)
+  end
+
+  defp record(%RethinkDB.Record{data: %{"id" => id, "locations" => locations, "owner_id" => owner}}, _) do
+    struct(Snaktrip, id: id, owner_id: owner, locations: locations)
+  end
+
+  defp record(%RethinkDB.Record{data: nil}, snak_id) do
+    struct(Snaktrip, id: snak_id)
+  end
+
+
   def handle_call(:current_state, _, state) do
     {:reply, state, state}
   end
@@ -51,6 +115,9 @@ defmodule Snaktrip.Server do
   def handle_cast({:add_location, location}, state) do
     locations = Map.put(state.locations, location.id, location)
     state = struct(Snaktrip, id: state.id, locations: locations)
+
+    Snaktrip.save(state)
+
     {:noreply, state}
   end
 end
