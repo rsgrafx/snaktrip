@@ -8,5 +8,5 @@ defmodule Snaktrip do
       locations: %{ int => %Snaktrip.Location{ address: "string", name: "string", latlong: [lat, long] } }
     }
   """
-  defstruct id: nil, locations: %{}
+  defstruct id: nil, owner_id: nil, locations: %{}
 end
