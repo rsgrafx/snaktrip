@@ -6,7 +6,7 @@ defmodule SnaktripApp do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Snaktrip.Database, []),
+      worker(Snaktrip.Connection, [[db: "snaktrip_app"]]),
       worker(Snaktrip.Manager, [])
     ]
     opts = [strategy: :one_for_one, name: SnaktripApp.Supervisor]
