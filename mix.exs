@@ -33,7 +33,8 @@ defmodule Snaktrip.Mixfile do
     [
       {:poolboy, "~> 1.5"},
       {:rethinkdb, "~> 0.4.0"},
-      {:secure_random, "~> 0.5"}
+      {:secure_random, "~> 0.5"},
+      { :inflex, "~> 1.7.0" }
     ]
   end
 end
