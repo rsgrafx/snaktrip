@@ -35,23 +35,24 @@ defmodule Snaktrip.Web.RealtimeServer do
 
   # Server implemenation
 
+  @doc """
+    states :: Erlang Record
+    Initializes with state( clients connected )
+  """
   def init(:ok) do
     state = state()
     {:ok, state}
   end
 
+  @doc """
+    Handles when a new client pid joins.
+  """
   def handle_cast({:join, pid}, state) do
-    current_clients = state(state, :clients)
-    all_clients = [pid|current_clients] #add the the list.
-    new_state = state(clients: all_clients)
-    { :noreply, new_state }
+    {:noreply, add_client(state, pid) }
   end
 
   def handle_cast({:leave, pid}, state) do
-    all_clients = state(state, :clients)
-    others = all_clients -- [pid]
-    new_state = state(clients: others)
-    {:noreply, new_state}
+    {:noreply, remove_client(state, pid)}
   end
 
   def handle_cast({:send_message, pid, message}, state) do
@@ -75,7 +76,16 @@ defmodule Snaktrip.Web.RealtimeServer do
 
   def terminate(_reason, _state), do: :ok
 
-  # Private functions
+  # End of callback_functions.
+
+  defp add_client(state, pid) do
+    state(clients: [ pid | state(state, :clients)] )
+  end
+
+  defp remove_client(state, pid) do
+    minused = state(state, :clients) -- [pid]
+    state(clients: minused)
+  end
 
   defp send_message(:others, pid, message, state) do
     clients = state(state, :clients)
