@@ -7,8 +7,9 @@ defmodule Snaktrip.Web.Api do
   get "/snaktrip/:uuid" do
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, Core.BankingRepo.all(Models.PurchaseItem)
-      |> Poison.encode!)
+    |> send_resp(200, %{data: [
+        %{id: 1, locations: %{}}, %{id: 2, locations: %{}}
+      ]} |> Poison.encode!)
   end
 
 end
