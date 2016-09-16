@@ -15,7 +15,7 @@ defmodule Snaktrip.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [
-      applications: [:logger],
+      applications: [:cowboy, :plug, :logger],
       mod: {SnaktripApp, []}
     ]
   end
@@ -31,10 +31,12 @@ defmodule Snaktrip.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
+      {:cowboy, "~> 1.0.0"},
+      {:plug, "~> 1.0"},
       {:poolboy, "~> 1.5"},
       {:rethinkdb, "~> 0.4.0"},
       {:secure_random, "~> 0.5"},
-      { :inflex, "~> 1.7.0" }
+      {:inflex, "~> 1.7.0" }
     ]
   end
 end
