@@ -72,7 +72,10 @@ defmodule Snaktrip.Server do
       Snaktrip.fetch(snak_id)
       |> from_rethink(snak_id)
       |> case do
-        %RethinkDB.Record{data: nil, profile: nil} -> struct(Snaktrip, id: snak_id)
+        %RethinkDB.Record{data: nil, profile: nil} ->
+          struct(Snaktrip, id: snak_id)
+        {:table, :empty} ->
+          struct(Snaktrip, id: snak_id)
         snaktrip -> snaktrip
       end
     {:noreply, snaktrip}
@@ -90,6 +93,10 @@ defmodule Snaktrip.Server do
     do: Snaktrip.fetch_by(%{owner_id: user_id, id: snak_id}) |> from_rethink(snak_id)
 
 # ** Protocol?
+  def collection(%RethinkDB.Collection{data: []}) do
+    {:table, :empty}
+  end
+
   def collection(%RethinkDB.Collection{data: [%{"id" => id, "locations" => locations, "owner_id" => owner}]}) do
     struct(Snaktrip, id: id, owner_id: owner, locations: locations)
   end

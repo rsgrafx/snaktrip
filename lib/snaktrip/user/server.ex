@@ -31,12 +31,18 @@ defmodule Snaktrip.User.Server do
       |> case do
         %RethinkDB.Record{data: nil, profile: nil} ->
           struct(Snaktrip.User, email: email, id: SecureRandom.uuid )
+        {:table, :empty} ->
+          struct(Snaktrip.User, email: email, id: SecureRandom.uuid )
         user ->
           user
       end
     {:noreply, user}
   end
 # ** Protocol?
+  def collection(%RethinkDB.Collection{data: []}) do
+    {:table, :empty}
+  end
+
   def collection(%RethinkDB.Collection{data: [%{"email" => email, "id" => id, "snaktrips" => snaktrips}]}) do
     struct(Snaktrip.User, id: id, email: email, snaktrips: snaktrips)
   end
