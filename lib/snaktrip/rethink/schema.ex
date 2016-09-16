@@ -29,11 +29,24 @@ defmodule Snaktrip.RethinkDB.Schema do
   end
 
   defp do_register_schema(table_string) when is_binary(table_string) do
-    %RethinkDB.Record{data: list} = connection.run(table_list)
-    case table_string in list do
-      false -> table_create(table_string) |> connection.run
+
+    table_list =
+      case Process.whereis(:rethinkdb_manager) do
+        nil ->
+          Snaktrip.RethinkDB.Manager.start_link(connection)
+          %{data: list} = connection.run(table_list)
+          list
+        process when is_pid(process) ->
+          GenServer.call(:rethinkdb_manager, :tables)
+      end
+
+    case table_string in table_list do
+      false ->
+        Snaktrip.RethinkDB.Manager.add_table(table_string)
+        table_create(table_string) |> connection.run
       _ -> {:ok, :table_exists}
     end
+
   end
 
   def table_name(module) do

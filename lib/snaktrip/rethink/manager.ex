@@ -15,7 +15,7 @@ defmodule Snaktrip.RethinkDB.Manager do
   end
 
   def add_table(table_name) do
-    GenServer.cast(:rethinkg_manager, {:add_table, table_name} )
+    GenServer.cast(:rethinkdb_manager, {:add_table, table_name} )
   end
 
   # Callbacks do
