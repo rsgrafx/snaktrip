@@ -1,4 +1,7 @@
 defmodule Snaktrip.Server do
+
+  use Snaktrip.RethinkDB.Helpers
+
   use GenServer
 
   def start_link(snak_id) when is_binary(snak_id) do
@@ -63,12 +66,10 @@ defmodule Snaktrip.Server do
     GenServer.cast(pid, {:add_location, location})
   end
 
-  # Callbacks
-  # Initialize State
+  # Callbacks # Initialize State
   def handle_info(:fetch_record, snak_id) when is_binary(snak_id) do
     snaktrip =
       Snaktrip.fetch(snak_id)
-      |> IO.inspect
       |> from_rethink(snak_id)
       |> case do
         %RethinkDB.Record{data: nil, profile: nil} -> struct(Snaktrip, id: snak_id)
@@ -88,26 +89,20 @@ defmodule Snaktrip.Server do
   defp fetch_by(%{owner_id: user_id, id: snak_id}),
     do: Snaktrip.fetch_by(%{owner_id: user_id, id: snak_id}) |> from_rethink(snak_id)
 
-  defp from_rethink(rethink_obj, snak_id) do
-    case rethink_obj do
-      %RethinkDB.Record{}     -> record(rethink_obj, snak_id)
-      %RethinkDB.Collection{} -> collection(rethink_obj)
-    end
-  end
-
-  defp collection(%RethinkDB.Collection{data: [%{"id" => id, "locations" => locations, "owner_id" => owner}]}) do
+# ** Protocol?
+  def collection(%RethinkDB.Collection{data: [%{"id" => id, "locations" => locations, "owner_id" => owner}]}) do
     struct(Snaktrip, id: id, owner_id: owner, locations: locations)
   end
 
-  defp record(%RethinkDB.Record{data: %{"id" => id, "locations" => locations, "owner_id" => owner}}, _) do
+  def record(%RethinkDB.Record{data: %{"id" => id, "locations" => locations, "owner_id" => owner}}, _) do
     struct(Snaktrip, id: id, owner_id: owner, locations: locations)
   end
 
-  defp record(%RethinkDB.Record{data: nil}, snak_id) do
+  def record(%RethinkDB.Record{data: nil}, snak_id) do
     struct(Snaktrip, id: snak_id)
   end
 
-
+#
   def handle_call(:current_state, _, state) do
     {:reply, state, state}
   end
