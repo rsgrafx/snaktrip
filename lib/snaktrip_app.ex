@@ -20,6 +20,7 @@ defmodule SnaktripApp do
     children = [
       worker(Snaktrip.Connection, [[db: "snaktrip_app"]]),
       worker(Snaktrip.Manager, []),
+      worker(Snaktrip.RethinkDB.Manager, [Snaktrip.Connection]),
       worker(Snaktrip.Web.Router, [], function: :run)
 
     ]
