@@ -9,7 +9,7 @@ defmodule Snaktrip.Web.Router do
   plug :fetch_query_params
 
 
-  plug Plug.Static, at: "/", from: :snaktrip_app
+  plug Plug.Static, at: "/", from: :snaktrip
 
   if Mix.env == :dev do
     use Plug.Debugger
