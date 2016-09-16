@@ -57,7 +57,7 @@ defmodule Snaktrip.Server do
 
   @doc """
     Example.
-      Snaptrip.Server.new_location(pid, %Snaktrip.Location.t )
+      Snaktrip.Server.new_location(pid, %Snaktrip.Location.t )
   """
   def new_location(pid, location) do
     GenServer.cast(pid, {:add_location, location})
