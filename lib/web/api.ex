@@ -30,7 +30,6 @@ defmodule Snaktrip.Web.Api do
       Snaktrip.User.Manager.fetch(email)
       |> Snaktrip.User.Server.get
       |> Map.from_struct
-      |> IO.inspect
 
     conn
       |> put_resp_content_type("application/json")
