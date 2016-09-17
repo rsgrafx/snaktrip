@@ -92,7 +92,6 @@ defmodule Snaktrip.Server do
   defp fetch_by(%{owner_id: user_id, id: snak_id}),
     do: Snaktrip.fetch_by(%{owner_id: user_id, id: snak_id}) |> from_rethink(snak_id)
 
-# ** Protocol?
   def collection(%RethinkDB.Collection{data: []}) do
     {:table, :empty}
   end
@@ -109,7 +108,6 @@ defmodule Snaktrip.Server do
     struct(Snaktrip, id: snak_id)
   end
 
-#
   def handle_call(:current_state, _, state) do
     {:reply, state, state}
   end
