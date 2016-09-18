@@ -15,6 +15,8 @@ defmodule SnaktripApp do
 
     start_cowboy
 
+    Application.ensure_all_started :inets
+
     import Supervisor.Spec, warn: false
 
     children = [
