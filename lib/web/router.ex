@@ -6,6 +6,8 @@ defmodule Snaktrip.Web.Router do
   use Plug.Builder
   use Plug.ErrorHandler
 
+  alias Snaktrip.Video.Download
+
   plug :fetch_query_params
 
 
@@ -41,6 +43,27 @@ defmodule Snaktrip.Web.Router do
     conn
     |> put_resp_header("content-type", "application/x-font-woff")
     |> send_file(200, "priv/app/static/fonts/#{file}")
+  end
+
+  get "/snaktrip/video/:filename" do
+    # Example VIDEO URL.
+    data = %{path: "https://s3.amazonaws.com/test-myhotspot/videos/SampleVideo_1280x720_1mb.mp4"}
+    tmp_path = "priv/tmp/#{SecureRandom.uuid}.mp4"
+    
+    {:ok, stats} =
+      Download.fetch(data)
+      |> Download.write_file(tmp_path)
+
+    filesize = stats.size
+    [range_start, range_end] = Download.calculate_range(conn, filesize)
+    content_length = range_end - range_start + 2
+    conn
+      |> put_resp_content_type("audio/mp4")
+      |> put_resp_header("content-length", Integer.to_string(content_length))
+      |> put_resp_header("accept-ranges", "bytes")
+      |> put_resp_header("content-disposition", ~s(inline; filename="#{filename}"))
+      |> put_resp_header("content-range", "bytes #{range_start}-#{range_end}/#{filesize}")
+      |> send_file(206, tmp_path, range_start, content_length)
   end
 
   get "/" do
