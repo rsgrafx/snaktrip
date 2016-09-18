@@ -5,8 +5,7 @@ defmodule Snaktrip.User.Manager do
 
   """
   # Returns Pid - for Snaktrip.User.Server
-
-  def fetch(by_email) do
+  def fetch(email: by_email) do
     GenServer.call(:snak_user_manager, {:server_process, by_email})
   end
 
