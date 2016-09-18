@@ -45,14 +45,18 @@ defmodule Snaktrip.Web.Router do
     |> send_file(200, "priv/app/static/fonts/#{file}")
   end
 
-  get "/snaktrip/video/:filename" do
+  get "/snaktrip/video/:snaktrip_id" do
     # Example VIDEO URL.
-    data = %{path: "https://s3.amazonaws.com/test-myhotspot/videos/SampleVideo_1280x720_1mb.mp4"}
-    tmp_path = "priv/tmp/#{SecureRandom.uuid}.mp4"
-    
-    {:ok, stats} =
+    data = %{
+      snak_trip: snaktrip_id,
+      path: "https://s3.amazonaws.com/test-myhotspot/videos/SampleVideo_1280x720_1mb.mp4"
+    }
+    # Generate a * tmp
+    # tmp_path = "priv/tmp/#{SecureRandom.uuid}.mp4"
+
+    {:ok, stats, tmp_path, filename} =
       Download.fetch(data)
-      |> Download.write_file(tmp_path)
+      |> Download.write_file
 
     filesize = stats.size
     [range_start, range_end] = Download.calculate_range(conn, filesize)
