@@ -26,17 +26,25 @@ defmodule Snaktrip.User.Server do
   def handle_info(:fetch_user_account, email) do
     user =
       Snaktrip.User.fetch_by(%{email: email})
-      |> IO.inspect
       |> from_rethink(email)
       |> case do
         %RethinkDB.Record{data: nil, profile: nil} ->
           struct(Snaktrip.User, email: email, id: SecureRandom.uuid )
+          |> save_user
         {:table, :empty} ->
           struct(Snaktrip.User, email: email, id: SecureRandom.uuid )
+          |> save_user
         user ->
           user
       end
     {:noreply, user}
+  end
+
+  def save_user(user) do
+    user
+      |> Map.from_struct
+      |> Snaktrip.User.save
+    user
   end
 # ** Protocol?
   def collection(%RethinkDB.Collection{data: []}) do
