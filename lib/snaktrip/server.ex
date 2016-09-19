@@ -4,38 +4,44 @@ defmodule Snaktrip.Server do
 
   use GenServer
 
+  # Starts a process with an existing - Snaktrip.id
+  # This would pull the existing data from the Rethink
   def start_link(snak_id) when is_binary(snak_id) do
-    GenServer.start(__MODULE__, snak_id)
+    GenServer.start(__MODULE__, snak_id, name: via_tuple(snak_id))
   end
 
-  def start_link(data) when is_map(data) do
-    GenServer.start(__MODULE__, data)
-  end
-
+  # Starts a *NEW* process - embedding the owner_id
+  # into the struct which is kept in the Genserver state
   def start_link(owner_id: user_id) do
     GenServer.start(__MODULE__, owner_id: user_id)
   end
 
-  # The situation is that in order to maintain integrity -
-  # I have to place the user_id in there.
-
-  # Pattern match typically for scoping
-  # Passing in API KEY \ owner_id
-  def init(%{owner_id: _, id: _}=opts) when is_map(opts) do
-    send(self, :fetch_record)
-    {:ok, opts}
+  # Starts a means of searching -> Which could lead to problems.
+  # I dont think this should be handled here.
+  def start_link(data) when is_map(data) do
+    GenServer.start(__MODULE__, data)
   end
 
-  # Typically when owner is creating new snaktrip
-  def init(owner_id: user_id) when is_binary(user_id) do
-    # Find or Create * Trip with Key
-    {:ok, struct(Snaktrip, id: SecureRandom.uuid, owner_id: user_id)}
+  defp via_tuple(snak_id) when is_binary(snak_id) do
+    {:via, :gproc, {:n, :l, {:snak_servers, snak_id }}}
   end
-
   # Fetch the PID - you have the key.
+  # Pid already registered in start_link
   def init(snak_id) when is_binary(snak_id) do
     send(self, :fetch_record)
     {:ok, snak_id}
+  end
+  # Typically when owner is creating new snaktrip
+  def init(owner_id: user_id) when is_binary(user_id) do
+    key = SecureRandom.uuid
+    :gproc.reg {:n, :l, {:snak_servers, key}}
+    {:ok, struct(Snaktrip, id: key, owner_id: user_id) }
+  end
+
+  #  Up for Review - possibly removal.
+  def init(%{owner_id: _, id: _}=opts) when is_map(opts) do
+    send(self, :fetch_record)
+    {:ok, opts}
   end
 
   @doc """
@@ -49,12 +55,15 @@ defmodule Snaktrip.Server do
         id => Snaktrip.Location.t
       }}
   """
-
-  def get(pid) do
+  def get(pid) when is_pid(pid) do
     current_state(pid)
   end
 
-  def current_state(pid) do
+  def get(snaktrip_id) when is_binary(snaktrip_id) do
+    GenServer.call( via_tuple(snaktrip_id), :current_state)
+  end
+
+  def current_state(pid) when is_pid(pid) do
     GenServer.call(pid, :current_state)
   end
 
@@ -62,8 +71,12 @@ defmodule Snaktrip.Server do
     Example.
       Snaktrip.Server.new_location(pid, %Snaktrip.Location.t )
   """
-  def new_location(pid, location) do
+  def new_location(pid, location) when is_pid(pid) do
     GenServer.cast(pid, {:add_location, location})
+  end
+
+  def new_location(snak_id, location) when is_binary(snak_id) do
+    GenServer.cast(via_tuple(snak_id) , {:add_location, location})
   end
 
   # Callbacks # Initialize State
@@ -82,7 +95,7 @@ defmodule Snaktrip.Server do
   end
 
   def handle_info(:fetch_record, opts) when is_map(opts) do
-    snaktrip = fetch_by(opts) || struct(Snaktrip, id: opts[:uuid_key], user_id: opts[:user_id])
+    snaktrip = fetch_by(opts) || struct(Snaktrip, id: opts[:id], owner_id: opts[:owner_id])
     {:noreply, snaktrip}
   end
 
