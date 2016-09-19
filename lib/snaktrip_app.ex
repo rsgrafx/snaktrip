@@ -19,7 +19,9 @@ defmodule SnaktripApp do
 
     children = [
       worker(Snaktrip.Connection, [[db: "snaktrip_app"]]),
-      worker(Snaktrip.Manager, []),
+      worker(Snaktrip.Supervisor, []),
+      worker(Snaktrip.Manager.Supervisor, []),
+      
       worker(Snaktrip.User.Manager, []),
       worker(Snaktrip.User.Location.Manager, []),
       worker(Snaktrip.RethinkDB.Manager, [Snaktrip.Connection]),
