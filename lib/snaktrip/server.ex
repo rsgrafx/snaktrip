@@ -115,7 +115,9 @@ defmodule Snaktrip.Server do
   def handle_cast({:add_location, location}, state) do
     new_state =
       struct(Snaktrip, id: state.id, locations: do_new_location(state, location) )
-    Snaktrip.save( Map.from_struct(new_state) )
+      spawn(fn ->
+        Snaktrip.save( Map.from_struct(new_state) )
+      end)
     {:noreply, new_state}
   end
 
