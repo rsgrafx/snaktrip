@@ -47,6 +47,14 @@ defmodule Snaktrip.RethinkDB.Repo do
       end
 
       @doc """
+        Calls the helper save function.
+          # insert is more inline with Elixir/Ecto naming.
+      """
+      def insert(record) do
+        save(record)
+      end
+
+      @doc """
         Insert new record in given * Objects.
       """
       @spec save(Map.t) :: RethinkDB.Record.t
